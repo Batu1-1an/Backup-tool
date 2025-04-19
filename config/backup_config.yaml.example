@@ -1,0 +1,49 @@
+# Example Configuration File for Python Backup & Restoration Tool
+
+# --- Backup Sources ---
+# List the directories and files you want to back up.
+# Paths should be absolute paths on the server where the tool is running.
+backup_sources:
+  - /var/log/syslog
+  - /etc/nginx/nginx.conf
+  # - C:\Users\Administrator\Documents
+  # - C:\Program Files\MyApp\data
+
+# --- Backup Target ---
+# Configure the network share where backups will be stored.
+backup_target:
+  # The path to the network share.
+  # For SMB: Use Windows-style paths like '\\server\share' or Linux-style '//server/share'.
+  # For NFS: Use 'server:/export/path'.
+  path: //your_backup_server/your_share_name
+
+  # The type of network share ('smb' or 'nfs').
+  type: smb # or nfs
+
+  # Optional: Credentials for accessing the network share.
+  # It's recommended to use environment variables or a secure method
+  # for storing credentials in a production environment.
+  # credentials:
+  #   username: your_share_username
+  #   password: your_share_password
+
+# --- Schedule ---
+# Define the backup schedule. You can specify daily and/or weekly backups.
+# Time should be in HH:MM format (24-hour clock).
+# Day of the week for weekly backups should be full name (e.g., Monday, Sunday).
+schedule:
+  # daily: "02:00" # Run daily backup at 2:00 AM
+  # weekly: "Sunday 03:00" # Run weekly backup on Sunday at 3:00 AM
+
+# --- Logging ---
+# Configure logging settings.
+logging:
+  # The path to the log file.
+  log_file: /var/log/backup_tool/backup_tool.log # or C:\Logs\backup_tool.log
+
+  # The minimum logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+  level: INFO
+
+  # Optional: Log rotation settings (if using RotatingFileHandler)
+  # max_bytes: 1048576 # 1MB
+  # backup_count: 5 # Keep 5 old log files
