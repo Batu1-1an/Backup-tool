@@ -78,7 +78,7 @@ backup_target:
   type: smb
   credentials:
     username: $BACKUP_USER # This should be expanded
-    password: securepassword
+    password: YOUR_PASSWORD_HERE
 
 schedule:
   daily: "02:00"

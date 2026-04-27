@@ -57,8 +57,8 @@ backup_target:
   path: //backup_server/backup_share
   type: smb
   credentials:
-    username: backup_user
-    password: backup_password
+    username: YOUR_BACKUP_USER
+    password: YOUR_BACKUP_PASSWORD
 
 # --- Schedule ---
 schedule:
@@ -97,8 +97,8 @@ backup_target:
   type: smb
   # Optional: Credentials
   credentials:
-    username: user
-    password: pass
+    username: YOUR_USERNAME
+    password: YOUR_PASSWORD
     domain: optional_domain
 
   # For NFS:
@@ -341,13 +341,13 @@ Set the environment variables before running the tool:
 ```bash
 # Linux/macOS
 export BACKUP_SHARE_PATH="//server/share"
-export BACKUP_USER="user"
-export BACKUP_PASS="password"
+export BACKUP_USER="YOUR_USER"
+export BACKUP_PASS="YOUR_PASSWORD"
 
 # Windows
 $env:BACKUP_SHARE_PATH="\\server\share"
-$env:BACKUP_USER="user"
-$env:BACKUP_PASS="password"
+$env:BACKUP_USER="YOUR_USER"
+$env:BACKUP_PASS="YOUR_PASSWORD"
 ```
 
 ### Running as a Service
