@@ -1,238 +1,233 @@
 <div align="center">
-  <h1>Backup Tool</h1>
-  <p><strong>Cross-platform CLI tool for automated file backup and restoration to SMB/NFS network shares</strong></p>
+  <h1>🗄️ Backup Tool</h1>
+  <p><strong>Cross-platform CLI engine for automated file backup &amp; restoration to SMB/NFS network shares</strong></p>
 
-  <a href="#"><img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="Python 3.7+"></a>
-  <a href="#"><img src="https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg" alt="Platform: Windows | Linux"></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-passing-brightgreen.svg" alt="Tests: Passing"></a>
+  <a href="#"><img src="https://img.shields.io/badge/python-3.7+-blue?style=flat-square" alt="Python 3.7+"></a>
+  <a href="#"><img src="https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey?style=flat-square" alt="Platform: Windows | Linux"></a>
+  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License: MIT"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square" alt="Tests: Passing"></a>
+  <a href="#"><img src="https://img.shields.io/badge/maintenance-active-%2300b894?style=flat-square" alt="Maintenance: Active"></a>
 </div>
 
----
-
-## Overview
-
-Backup Tool is a Python-based command-line utility designed to automate the backup of critical files and directories from Linux and Windows servers to network shares via **SMB** or **NFS** protocols. It supports scheduled automated backups, manual on-demand backups, file restoration with conflict handling, backup rotation and pruning, and incremental backup capabilities.
+<br>
 
 ---
 
-## Features
+## 🔥 The Problem
 
-- **YAML Configuration** — Human-readable config for sources, targets, schedules, and retention policies
-- **SMB / NFS Support** — Native SMB (CIFS) and NFS network share connectivity on both Windows and Linux
-- **Scheduled Backups** — Daily and weekly automated scheduling via the `schedule` library
-- **Manual Backup & Restore** — CLI commands for on-demand backups and point-in-time restores
-- **Backup Rotation & Pruning** — Retention policy with configurable `keep_last` to automatically prune old backups
-- **Incremental Backups** — Initial support for file-level incremental backup (size/mtime comparison)
-- **Progress Reporting** — Real-time progress tracking during file copy operations
-- **Configurable Logging** — Rotating file logging with configurable levels and log file paths
-- **Environment Variable Expansion** — Securely reference credentials and paths via `${VAR}` in config
-- **Source & Target Overrides** — Override backup sources or targets at runtime via CLI arguments
-- **Cross-Platform** — Runs on Windows 10+ and major Linux distributions
-- **Comprehensive Error Handling** — Granular error handling with graceful continuation on per-file failures
+Manual backups are fragile. Cron jobs with raw `rsync` or `robocopy` scripts lack error handling, logging, and retention management. When a server dies, you discover what _wasn't_ backed up — and the one tape you needed is corrupted.
+
+**Backup Tool** replaces ad-hoc shell scripts with a declarative, protocol-aware backup engine. Define your sources and targets once in YAML, then run on-demand or let the built-in scheduler handle daily/weekly rotations. It handles SMB _and_ NFS on both Windows and Linux, so your heterogeneous environment is covered under a single CLI.
 
 ---
 
-## Tech Stack
+## ✨ Features
 
-| Component             | Technology                                                                 |
-|-----------------------|----------------------------------------------------------------------------|
-| Language              | [Python 3.7+](https://www.python.org/)                                     |
-| Config Parsing        | [PyYAML 6.0+](https://pyyaml.org/)                                         |
-| Job Scheduling        | [schedule 1.2+](https://github.com/dbader/schedule)                        |
-| Network Protocols     | SMB (CIFS) · NFS                                                           |
-| Testing               | [pytest 8.1+](https://docs.pytest.org/) · `unittest.mock`                  |
-| CLI Framework         | Python `argparse` (standard library)                                       |
-
----
-
-## Prerequisites
-
-- **Python 3.7 or higher**
-- Network access to an SMB or NFS share
-- Appropriate read permissions for source files/directories
-- Appropriate write permissions on the backup target share
-- **Linux only:** `sudo` access for mounting CIFS/NFS shares; `cifs-utils` package recommended
+| Area | Capabilities |
+|------|-------------|
+| **📋 Declarative Config** | YAML-based — sources, targets, schedules, retention, logging in one file |
+| **🔌 Dual Protocol** | Native SMB (CIFS) and NFS on Windows _and_ Linux |
+| **⏰ Smart Scheduling** | Built-in daily & weekly scheduler via the `schedule` library |
+| **📤 On-Demand Backup** | Manual backup with optional source/target overrides |
+| **📥 Point-in-Time Restore** | Restore from any timestamp; `overwrite` or `error` conflict strategy |
+| **🔄 Rotation & Pruning** | Configurable `keep_last` policy — auto-prune old backups |
+| **📈 Incremental Backups** | File-level incremental via size + mtime comparison |
+| **📊 Progress Reporting** | Real-time progress during file copy operations |
+| **🔐 Secure Credentials** | `${VAR}` expansion in config — keep secrets out of files |
+| **📝 Structured Logging** | Rotating file logger with configurable level and path |
+| **🎯 Runtime Overrides** | Override sources or targets via CLI without touching config |
+| **🛡️ Graceful Errors** | Per-file failure handling — one bad file never kills a run |
 
 ---
 
-## Installation
+## 🏗️ Architecture
 
-1. **Clone the repository:**
+```
+┌──────────────┐     ┌──────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  config.yaml │────▶│  Scheduler    │────▶│   Backup Engine  │────▶│  Network Share   │
+│  (sources,   │     │  (daily /     │     │  (full / incr.)  │     │  (SMB / NFS)     │
+│   target,    │     │   weekly)     │     │                  │     │                  │
+│   retention) │     │              │     │                  │     │                  │
+└──────────────┘     └──────────────┘     └─────────────────┘     └─────────────────┘
+       │                                                                    │
+       │                                                                    │
+       ▼                                                                    ▼
+┌──────────────┐                                                   ┌─────────────────┐
+│  Logger      │                                                   │   Restore       │
+│  (file +     │                                                   │   Engine        │
+│   console)   │                                                   │   (timestamp)   │
+└──────────────┘                                                   └─────────────────┘
+```
 
-   ```bash
-   git clone https://github.com/Batu1-1an/Backup-tool.git
-   cd Backup-tool
-   ```
-
-2. **Create a virtual environment (recommended):**
-
-   ```bash
-   # Linux / macOS
-   python3 -m venv .venv
-   source .venv/bin/activate
-
-   # Windows
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **(Optional) Install in development mode:**
-
-   ```bash
-   pip install -e .
-   ```
+The `Scheduler` runs as a long-lived process, firing `Backup Engine` on the configured cadence. The engine reads sources from config (or CLI overrides), copies to the target share, then applies the retention policy. The `Restore Engine` reads a timestamped backup directory and reconstructs files to a local destination.
 
 ---
 
-## Configuration
+## 🚀 Quick Start
 
-Copy the example configuration and edit it to match your environment:
+<details open>
+<summary><strong>Get up and running in 4 steps</strong></summary>
 
 ```bash
-# Linux / macOS
+# 1. Clone & enter
+git clone https://github.com/Batu1-1an/Backup-tool.git
+cd Backup-tool
+
+# 2. Create virtual environment & install
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# 3. Copy and edit config
 cp config/backup_config.yaml.example config/backup_config.yaml
 
-# Windows
-copy config\backup_config.yaml.example config\backup_config.yaml
+# 4. Run your first backup
+backup_tool backup
 ```
+</details>
 
-### Full Configuration Reference
-
-```yaml
-# --- Backup Sources ---
-# List of files and directories to back up (absolute paths).
-backup_sources:
-  - /var/log/syslog
-  - /etc/nginx/nginx.conf
-  - /home/user/documents
-
-# --- Backup Target ---
-# Network share where backups will be stored.
-backup_target:
-  path: //your_backup_server/backup_share   # SMB: //server/share | NFS: server:/export
-  type: smb                                  # "smb" or "nfs"
-  credentials:                               # Optional; use env vars for security
-    username: ${BACKUP_USER}
-    password: ${BACKUP_PASS}
-
-# --- Schedule ---
-# Automated backup schedule (daily and/or weekly).
-schedule:
-  daily: "02:00"              # HH:MM (24-hour)
-  weekly: "Sunday 03:00"      # Day HH:MM
-
-# --- Retention Policy ---
-# Automatically prune old backups, keeping only the N most recent.
-retention_policy:
-  keep_last: 30               # Number of most recent backups to retain
-
-# --- Logging ---
-logging:
-  log_file: /var/log/backup_tool/backup_tool.log   # or C:\Logs\backup_tool.log
-  level: INFO                                       # DEBUG | INFO | WARNING | ERROR | CRITICAL
-```
-
-> **Security:** Use environment variables (`${VAR}` syntax) for credentials. The config loader automatically expands them at runtime.
+> **Prerequisites:** Python 3.7+, network access to an SMB or NFS share, and write permission on the target. Linux users need `cifs-utils` and `sudo` for mounting.
 
 ---
 
-## Usage
+## 📖 CLI Reference
 
-### Command Structure
-
-```bash
+```
 backup_tool [--config PATH] [--log-level LEVEL] [--log-file PATH] <command> [OPTIONS]
 ```
 
-### Available Commands
+### Global Options
 
-| Command     | Description                                       |
-|-------------|---------------------------------------------------|
-| `backup`    | Run a manual backup                               |
-| `restore`   | Restore files from a specific backup timestamp     |
-| `schedule`  | Start the scheduler for automated backups          |
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--config PATH` | `config/backup_config.yaml` | Path to YAML configuration file |
+| `--log-level LEVEL` | `INFO` | One of: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
+| `--log-file PATH` | from config | Override log file destination |
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `backup` | Execute a manual backup |
+| `restore` | Restore files from a specific backup timestamp |
+| `schedule` | Start the automated backup scheduler (long-lived) |
+
+---
 
 ### `backup` — Manual Backup
 
 ```bash
 backup_tool backup [OPTIONS]
-
-Options:
-  --config PATH         Config file path (default: config/backup_config.yaml)
-  --source PATH...      Override source paths (space-separated)
-  --log-level LEVEL     Logging level (default: INFO)
-  --log-file PATH       Log file path (overrides config)
-  --help                Show help message
 ```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--source PATH [PATH ...]` | from config | Override source paths (space-separated) |
+| `--target TYPE:VALUE` | from config | Override target (`smb://server/share` or `nfs://server:/export`) |
+| `--incremental` | `false` | Enable file-level incremental mode |
 
 **Examples:**
-
 ```bash
-# Backup with default configuration
+# Default config backup
 backup_tool backup
 
-# Backup specific sources only
-backup_tool backup --source /etc/nginx /home/user/documents
+# Override sources, debug logging
+backup_tool backup --source /etc/nginx /home/user/documents --log-level DEBUG
 
-# Backup with custom config and debug logging
-backup_tool backup --config /etc/backup_tool/prod.yaml --log-level DEBUG
+# Custom config with incremental mode
+backup_tool backup --config /etc/backup_tool/prod.yaml --incremental
 ```
 
-### `restore` — Restore from Backup
+---
+
+### `restore` — Point-in-Time Restore
 
 ```bash
 backup_tool restore --backup-timestamp <YYYYMMDD_HHMMSS> --destination <PATH> [OPTIONS]
-
-Options:
-  --config PATH               Config file path
-  --backup-timestamp TEXT      Backup timestamp to restore from [required]
-  --destination PATH           Local destination path [required]
-  --conflict-strategy STRATEGY  "overwrite" or "error" (default: overwrite)
-  --log-level LEVEL            Logging level
-  --log-file PATH              Log file path
-  --help                       Show help message
 ```
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--backup-timestamp TEXT` | ✅ | — | Timestamp of the backup to restore (`20231027_103000`) |
+| `--destination PATH` | ✅ | — | Local directory to restore files into |
+| `--conflict-strategy STRATEGY` | — | `overwrite` | `overwrite` or `error` |
+| `--incremental-parent TEXT` | — | — | Parent timestamp for incremental restore chain |
 
 **Examples:**
-
 ```bash
-# Restore to a specific location, overwriting existing files
+# Restore with overwrite
 backup_tool restore --backup-timestamp 20231027_103000 --destination /tmp/restore
 
-# Restore with error-on-conflict strategy (safety first)
+# Safety-first: error on any conflict
 backup_tool restore --backup-timestamp 20231027_103000 --destination /tmp/restore --conflict-strategy error
 ```
+
+---
 
 ### `schedule` — Automated Scheduler
 
 ```bash
 backup_tool schedule [OPTIONS]
-
-Options:
-  --config PATH     Config file path
-  --log-level LEVEL  Logging level
-  --log-file PATH    Log file path
-  --help             Show help message
 ```
 
-Runs indefinitely, executing backups according to the schedule defined in the configuration file.
+Runs indefinitely. Define cadence in `config/backup_config.yaml`:
+
+```yaml
+schedule:
+  daily: "02:00"           # 24-hour format
+  weekly: "Sunday 03:00"
+```
+
+| Option | Description |
+|--------|-------------|
+| `--once` | Run scheduled tasks once and exit (useful for systemd timers / cron wrappers) |
 
 ---
 
-## Project Structure
+## ⚙️ Configuration Reference
+
+Full configuration lives in a single YAML file. Environment variables (`${VAR}` syntax) are expanded at runtime.
+
+```yaml
+# ── Backup Sources ──────────────────────────────────────────
+backup_sources:
+  - /var/log/syslog
+  - /etc/nginx/nginx.conf
+  - /home/user/documents
+
+# ── Backup Target ───────────────────────────────────────────
+backup_target:
+  path: //your_backup_server/backup_share   # SMB: //server/share  |  NFS: server:/export
+  type: smb                                  # "smb" | "nfs"
+  credentials:
+    username: ${BACKUP_USER}
+    password: ${BACKUP_PASS}
+
+# ── Schedule ────────────────────────────────────────────────
+schedule:
+  daily: "02:00"              # HH:MM (24-hour)
+  weekly: "Sunday 03:00"      # Day HH:MM
+
+# ── Retention Policy ────────────────────────────────────────
+retention_policy:
+  keep_last: 30               # Number of most recent backups to retain
+
+# ── Logging ─────────────────────────────────────────────────
+logging:
+  log_file: /var/log/backup_tool/backup_tool.log   # or C:\Logs\backup_tool.log
+  level: INFO                                       # DEBUG | INFO | WARNING | ERROR | CRITICAL
+```
+
+> **🔐 Security:** Never hardcode credentials. Use `${VAR}` references — the loader expands them from the environment at runtime. Pair this with a `.env` file or your secrets manager.
+
+---
+
+## 📁 Project Structure
 
 ```
 Backup-tool/
 ├── config/
-│   └── backup_config.yaml.example   # Example configuration template
-├── docs/                             # Project documentation
+│   └── backup_config.yaml.example   # Configuration template
+├── docs/                             # Extended documentation
 │   ├── architecture.md
 │   ├── backup_tool_plan.md
 │   ├── directory_structure.md
@@ -243,86 +238,75 @@ Backup-tool/
 │   ├── technical.md
 │   └── usage.md
 ├── src/
-│   ├── backup_tool/                  # Core package
-│   │   ├── __init__.py               # Package init
-│   │   ├── config.py                 # YAML config loader & validator
+│   ├── backup_tool/                  # Core library
+│   │   ├── __init__.py
+│   │   ├── config.py                 # YAML loader & validator
 │   │   ├── backup.py                 # Backup engine (full + incremental)
-│   │   ├── restore.py                # Restore engine with conflict handling
+│   │   ├── restore.py                # Restore engine with conflict resolution
 │   │   ├── scheduler.py              # Automated job scheduler
-│   │   ├── network.py                # SMB/NFS share connectivity
+│   │   ├── network.py                # SMB / NFS share connectivity
 │   │   └── logger.py                 # Rotating file + console logging
-│   └── main.py                       # CLI entry point
-├── tasks/                            # Project management & task tracking
+│   └── main.py                       # CLI entry point (argparse)
+├── tasks/
 │   ├── active_context.md
 │   └── tasks_plan.md
-├── tests/                            # Unit and integration tests
+├── tests/
 │   ├── test_config.py
 │   ├── test_backup.py
 │   ├── test_restore.py
 │   ├── test_network.py
 │   ├── test_logger.py
 │   └── test_placeholder.py
-├── requirements.txt                  # Python dependencies
-└── README.md                         # This file
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## Testing
-
-The project uses **pytest** with `unittest.mock` for comprehensive unit testing.
+## 🧪 Testing
 
 ```bash
-# Run all tests
+# Full test suite
 pytest -v
 
-# Run tests for a specific module
+# Module-specific
 pytest tests/test_config.py -v
 pytest tests/test_backup.py -v
-pytest tests/test_network.py -v
 
-# Run with coverage (if pytest-cov is installed)
+# With coverage
 pytest --cov=backup_tool tests/
 ```
 
----
-
-## Module API Reference
-
-| Module      | Key Functions                                                                                 |
-|-------------|------------------------------------------------------------------------------------------------|
-| `config`    | `load_config(path)` — Load and validate YAML config                                            |
-| `backup`    | `perform_backup(config, source_override, target_override, incremental)` — Execute backup       |
-| `restore`   | `perform_restore(config, timestamp, destination, conflict_strategy)` — Execute restore         |
-| `network`   | `connect_to_share(path, type, creds)` / `disconnect_from_share(path, type)` — Manage shares    |
-| `scheduler` | `run_scheduled_backups(config_path)` — Start the automated scheduler                           |
-| `logger`    | `setup_logging(file_path, level)` — Configure rotating file + console logging                  |
+Uses **pytest 8.1+** with `unittest.mock` for comprehensive unit coverage.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
 - [x] YAML configuration with validation & env var expansion
 - [x] SMB / NFS network share connectivity (Windows + Linux)
-- [x] Full backup with progress reporting
-- [x] File restore with conflict handling (`overwrite` / `error`)
+- [x] Full backup with real-time progress reporting
+- [x] Point-in-time restore with conflict handling
 - [x] Daily & weekly job scheduling
-- [x] Backup rotation and pruning (retention policy)
-- [x] Incremental backup (file-level size/mtime comparison)
-- [ ] Compression options for backup archives
-- [ ] Encryption for sensitive backup data
-- [ ] Email / webhook error notifications
-- [ ] Daemon mode for the scheduler
-- [ ] Web-based monitoring dashboard
+- [x] Backup rotation & pruning (retention policy)
+- [x] Incremental backup (file-level size/mtime)
+- [ ] Compression (gzip / zstd archive support)
+- [ ] Encryption (AES-256-GCM for backup payloads)
+- [ ] Notifications (email / Slack / webhook)
+- [ ] Daemon mode (run as system service)
+- [ ] Web monitoring dashboard
+- [ ] Backup verification (checksum integrity checks)
 
 ---
 
-## License
+## 📄 License
 
-[MIT](LICENSE)
+[MIT](LICENSE) — see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
   <sub>Built with Python · Maintained by <a href="https://github.com/Batu1-1an">Batu1-1an</a></sub>
+  <br>
+  <sub>⭐ Star this repo if you find it useful</sub>
 </div>
