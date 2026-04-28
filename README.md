@@ -7,6 +7,8 @@
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License: MIT"></a>
   <a href="#"><img src="https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square" alt="Tests: Passing"></a>
   <a href="#"><img src="https://img.shields.io/badge/maintenance-active-%2300b894?style=flat-square" alt="Maintenance: Active"></a>
+  <a href="#"><img src="https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker" alt="Docker: Ready"></a>
+  <a href="#"><img src="https://img.shields.io/badge/pip%20install-v0.1.0-blue?style=flat-square" alt="pip install"></a>
 </div>
 
 <br>
@@ -75,17 +77,38 @@ cd Backup-tool
 
 # 2. Create virtual environment & install
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt       # or: pip install .
 
 # 3. Copy and edit config
 cp config/backup_config.yaml.example config/backup_config.yaml
 
 # 4. Run your first backup
-backup_tool backup
+backup_tool backup                    # or: python -m backup_tool backup
 ```
 </details>
 
 > **Prerequisites:** Python 3.7+, network access to an SMB or NFS share, and write permission on the target. Linux users need `cifs-utils` and `sudo` for mounting.
+
+---
+
+## 🐳 Docker
+
+<details>
+<summary><strong>Containerized deployment with Docker</strong></summary>
+
+```bash
+# Build the image
+docker build -t backup-tool .
+
+# Run with config and logs volumes
+docker run -d --name backup-tool \
+  -v /host/path/to/config:/app/config \
+  -v /host/path/to/logs:/app/logs \
+  backup-tool
+```
+
+The image includes `cifs-utils` and `nfs-common`, and runs under a dedicated non-root user. Mount `config/` and `logs/` from the host to persist configuration and logs across restarts.
+</details>
 
 ---
 
@@ -181,6 +204,8 @@ schedule:
 |--------|-------------|
 | `--once` | Run scheduled tasks once and exit (useful for systemd timers / cron wrappers) |
 
+> **🐛 Bug Fix:** Added missing `import os` in `scheduler.py` — the scheduler was using `os.path` without importing the `os` module.
+
 ---
 
 ## ⚙️ Configuration Reference
@@ -257,6 +282,11 @@ Backup-tool/
 │   ├── test_network.py
 │   ├── test_logger.py
 │   └── test_placeholder.py
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── Dockerfile                       # Containerized deployment
+├── .dockerignore                    # Optimised Docker build context
+├── pyproject.toml                   # pip-installable package config
 ├── requirements.txt
 └── README.md
 ```
